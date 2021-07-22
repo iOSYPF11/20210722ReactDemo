@@ -80,6 +80,7 @@ function App() {
       {
         note.image && <img src={note.image} style={{width: 400}} />
       }
+      
     </div>
   ))
 }
