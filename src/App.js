@@ -7,6 +7,7 @@ import { createNote as createNoteMutation, deleteNote as deleteNoteMutation } fr
 
 const initialFormState = { name: '', description: '' }
 
+
 function App() {
   const [notes, setNotes] = useState([]);
   const [formData, setFormData] = useState(initialFormState);
@@ -16,11 +17,12 @@ function App() {
   }, []);
 
   async function onChange(e) {
-    if (!e.target.files[0]) return
-    const file = e.target.files[0];
-    setFormData({ ...formData, image: file.name });
-    await Storage.put(file.name, file);
-    fetchNotes();
+    for(var i = 0;i<e.target.files.length;i++){
+      const file = e.target.files[i];
+      setFormData({ ...formData, image: file.name });
+      await Storage.put(file.name, file);
+    }
+    // fetchNotes();
   }
   async function fetchNotes() {
     const apiData = await API.graphql({ query: listNotes });
