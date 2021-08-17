@@ -6,7 +6,7 @@ import { listNotes } from './graphql/queries';
 import { createNote as createNoteMutation, deleteNote as deleteNoteMutation } from './graphql/mutations';
 
 const initialFormState = { name: '', description: '' }
-
+var imageArrayName = []
 
 function App() {
   const [notes, setNotes] = useState([]);
@@ -17,36 +17,83 @@ function App() {
   }, []);
 
   async function onChange(e) {
+
+    
+
     for(var i = 0;i<e.target.files.length;i++){
       const file = e.target.files[i];
-      setFormData({ ...formData, image: file.name });
-      await Storage.put(file.name, file);
+      imageArrayName.push(file.name)
+      console.log(imageArrayName)
     }
-    // fetchNotes();
+    setFormData({ ...formData, image: imageArrayName});
+
+    for(var i = 0;i<e.target.files.length;i++){
+      await Storage.put(imageArrayName[i], e.target.files[i]);
+    }
+
+    // for(var i = 0;i<e.target.files.length;i++){
+    //   await Storage.put(imageArrayName[i], e.target.files[i]);
+    //   const image = await Storage.get(formData.image[i]);
+
+    //   console.log("测试存储     " +image)
+    // }
+
+
+
+    fetchNotes();
+
+
   }
+
+  //上传数据啊啊
+  async function createNote() {
+    if (!formData.name || !formData.description) return;
+
+    
+  
+    console.log("图       "+formData.image)
+    await API.graphql({ query: createNoteMutation, variables: { input: formData } });
+    
+    if (formData.image) {
+      for(var i = 0;i<formData.image.length;i++){
+        const image = await Storage.get(formData.image[i]);
+        formData.image[i] = image;
+
+        console.log("图jieguo 前3333       "+image)
+      }
+    }
+
+    console.log("图jieguo zuizhong      "+formData.image)
+    
+    setNotes([ ...notes, formData ]);
+    setFormData(initialFormState);
+  }
+  
+
+
+
+//检索数据库数据
   async function fetchNotes() {
     const apiData = await API.graphql({ query: listNotes });
     const notesFromAPI = apiData.data.listNotes.items;
+
     await Promise.all(notesFromAPI.map(async note => {
       if (note.image) {
-        const image = await Storage.get(note.image);
+        const image = await Storage.get(note.image[0]);
         note.image = image;
+        console.log("sssssss-------       "+image)
       }
+//网址图片
+console.log("sssssss+++++++       "+note.image[0])
+
+
+
       return note;
     }))
     setNotes(apiData.data.listNotes.items);
   }
 
-  async function createNote() {
-    if (!formData.name || !formData.description) return;
-    await API.graphql({ query: createNoteMutation, variables: { input: formData } });
-    if (formData.image) {
-      const image = await Storage.get(formData.image);
-      formData.image = image;
-    }
-    setNotes([ ...notes, formData ]);
-    setFormData(initialFormState);
-  }
+  
 
   async function deleteNote({ id }) {
     const newNotesArray = notes.filter(note => note.id !== id);
@@ -69,6 +116,7 @@ function App() {
       />
       <input
         type="file"
+        multiple="multiple"
         onChange={onChange}
       />
       <button onClick={createNote}>Create Note</button>
